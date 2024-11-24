@@ -12,8 +12,6 @@ const create = () => {
  *
  * @param {import('discord.js').Interaction} interaction
  */
-const invoke = async (interaction) => {
-
-}
+const invoke = async (interaction) => {}
 
 export { create, invoke }
