@@ -6,6 +6,10 @@
         "start": "bun run app.js",
         "format": "prettier --write ."
     },
+    "imports": {
+        "#events/*": "./events/*",
+        "#commands/*": "./events/commands/*.js"
+    },
     "devDependencies": {
         "@types/bun": "latest",
         "prettier": "^3.3.3"
