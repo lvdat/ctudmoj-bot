@@ -4,6 +4,17 @@ const sequelize = new Sequelize({
     storage: 'db.sqlite'
 })
 
+const User = sequelize.define('User', {
+    discordId: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true
+    },
+    username: {
+        type: DataTypes.STRING
+    }
+})
+
 sequelize.sync()
 
 export default { sequelize }

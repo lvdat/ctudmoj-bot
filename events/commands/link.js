@@ -1,4 +1,5 @@
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js'
+import db from '../../core/database.js'
 
 const create = () => {
     const command = new SlashCommandBuilder()
@@ -18,6 +19,8 @@ const create = () => {
  *
  * @param {import('discord.js').Interaction} interaction
  */
-const invoke = async (interaction) => {}
+const invoke = async (interaction) => {
+    db.sequelize.sync()
+}
 
 export { create, invoke }
