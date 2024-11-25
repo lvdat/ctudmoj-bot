@@ -1,20 +1,54 @@
-import { Sequelize, DataTypes } from 'sequelize'
-const sequelize = new Sequelize({
-    dialect: 'sqlite',
-    storage: 'db.sqlite'
+import mongoose from 'mongoose'
+
+const ProblemSchema = new mongoose.Schema({
+    code: String,
+    name: String,
+    types: Array,
+    group: String,
+    points: Number,
+    partial: Boolean,
+    is_organization_private: Boolean,
+    is_public: Boolean
 })
 
-const User = sequelize.define('User', {
-    discordId: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        unique: true
+const ConnectSchema = new mongoose.Schema(
+    {
+        discordId: String,
+        ojUsername: String
     },
-    username: {
-        type: DataTypes.STRING
+    {
+        timestamps: true
     }
+)
+
+const ContestSchema = new mongoose.Schema({
+    key: String,
+    name: String,
+    start_time: String,
+    end_time: String,
+    time_limit: Number,
+    is_rated: Boolean,
+    rate_all: Boolean,
+    tags: Array
 })
 
-sequelize.sync()
+const UserSchema = new mongoose.Schema({
+    ojId: Number,
+    username: String,
+    display_name: String,
+    points: String,
+    performance_points: String,
+    problem_count: Number,
+    solved_problems: Array,
+    rank: String,
+    rating: Number,
+    organizations: Array,
+    contests: Array
+})
 
-export default { sequelize }
+const Problem = mongoose.model('Problem', ProblemSchema)
+const Connect = mongoose.model('Connect', ConnectSchema)
+const Contest = mongoose.model('Contest', ContestSchema)
+const User = mongoose.model('User', UserSchema)
+
+export default { Problem, Connect, Contest, User }
