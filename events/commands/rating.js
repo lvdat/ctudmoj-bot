@@ -1,45 +1,11 @@
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js'
 import { ChartJSNodeCanvas } from 'chartjs-node-canvas'
+import userStuff from '../../utils/stuff/user.stuff.js'
 import fs from 'fs'
 
 const width = 800
 const height = 600
 const chartJSNodeCanvas = new ChartJSNodeCanvas({ width, height })
-
-// async function createRatingChart(contests) {
-//     const labels = contests.map(contest => contest.key)
-//     const ratings = contests.map(contest => contest.rating)
-
-//     const configuration = {
-//         type: 'line',
-//         data: {
-//             labels: labels,
-//             datasets: [{
-//                 label: 'Rating Progression',
-//                 data: ratings,
-//                 borderColor: 'rgba(75, 192, 192, 1)',
-//                 backgroundColor: 'rgba(75, 192, 192, 0.2)',
-//                 borderWidth: 2,
-//                 fill: true,
-//             }]
-//         },
-//         options: {
-//             plugins: {
-//                 title: {
-//                     display: true,
-//                     text: 'Rating Progression'
-//                 }
-//             },
-//             scales: {
-//                 y: {
-//                     beginAtZero: false
-//                 }
-//             }
-//         }
-//     }
-
-//     return chartJSNodeCanvas.renderToBuffer(configuration)
-// }
 
 async function createRatingChart(contests) {
     const labels = contests.map(contest => contest.key)
@@ -153,36 +119,46 @@ const create = () => {
  * @param {import('discord.js').Interaction} interaction
  */
 const invoke = async (interaction) => {
-    const data = {
-        contests: [
-            { key: 'cictcpc23qual', rating: 1743 },
-            { key: 'cictcpc23_final', rating: 1967 },
-            { key: 'roadtohue1', rating: 2129 },
-            { key: 'roadtohue2', rating: 2236 },
-            { key: 'roadtohue3', rating: 2285 },
-            { key: 'roadtohue4', rating: 2296 },
-            { key: 'roadtohanoi01', rating: 2245 },
-            { key: 'roadtohanoi02', rating: 2295 },
-            { key: 'roadtohanoi04', rating: 2313 },
-            { key: 'cictcpc24_vongloai', rating: 2381 },
-            { key: 'cictcpc2024_chungket', rating: 2361 }
-        ]
-    }
-    const chartBuffer = await createRatingChart(data.contests)
-    // Lưu hình ảnh tạm thời
-    const filePath = './rating-chart.png'
-    fs.writeFileSync(filePath, chartBuffer)
+    const username = interaction.options.getString('username')
 
-    // Tạo embed và gửi biểu đồ
-    const embed = new EmbedBuilder()
-        .setTitle('Rating Progression')
-        .setDescription('Biểu đồ rating qua các contest')
-        .setImage('attachment://rating-chart.png')
-    
-    await interaction.reply({
-        embeds: [embed],
-        files: [{ attachment: filePath, name: 'rating-chart.png' }]
-    })
+    try {
+        // Defer reply để thông báo rằng bot đang xử lý
+        await interaction.deferReply()
+
+        // Fetch rating data từ API
+        const contests = await userStuff.fetchUserRatingInfo(username) // Sử dụng await để giải quyết Promise
+
+        console.log('contests: ' + JSON.stringify(contests, null, 2))
+
+        // Tạo biểu đồ từ dữ liệu
+        const chartBuffer = await createRatingChart(contests)
+
+        // Lưu biểu đồ tạm thời
+        const filePath = `./rating-chart-${username}.png`
+        fs.writeFileSync(filePath, chartBuffer)
+
+        // Tạo Embed và gửi biểu đồ
+        const resultEmbed = new EmbedBuilder()
+            .setTitle('Rating Progression')
+            .setDescription(`Biểu đồ rating của **${username}** qua các contest`)
+            .setImage('attachment://rating-chart.png')
+
+        await interaction.editReply({
+            embeds: [resultEmbed],
+            files: [{ attachment: filePath, name: 'rating-chart.png' }]
+        })
+
+        // Xóa file tạm sau khi gửi
+        fs.unlinkSync(filePath)
+    } catch (error) {
+        console.error('Error handling /rating command:', error)
+
+        // Nếu xảy ra lỗi, chỉnh sửa tin nhắn thông báo lỗi
+        await interaction.editReply({
+            content: 'Đã xảy ra lỗi khi xử lý lệnh. Vui lòng thử lại sau.',
+            embeds: [] // Xóa các embed cũ
+        })
+    }
 }
 
 export { create, invoke }

@@ -7,10 +7,10 @@ class UserStuff {
      * @param {String} username 
      * @returns {Object} user info
      */
-    async fetchUserInfo (username) {
+    async fetchUserInfo(username) {
         try {
             const response = await api().get('/user/' + username)
-            return response.data.data.objects
+            return response.data.data.object
         } catch (error) {
             console.error('Error fetching problems:', error)
             throw error
@@ -22,10 +22,10 @@ class UserStuff {
      * @param {String} username 
      * @returns {Array} contest rating history
      */
-    async fetchUserRatingInfo (username) {
+    async fetchUserRatingInfo(username) {
         try {
             const response = await api().get('/user/' + username)
-            return response.data.data.objects.contest
+            return response.data.data.object.contests
         } catch (error) {
             console.error('Error fetching problems:', error)
             throw error
