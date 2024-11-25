@@ -2,6 +2,10 @@ import api from './api.js'
 import db from '../../core/database.js'
 
 class ProblemStuff {
+    /**
+     * 
+     * @returns {Array} all problems from API
+     */
     async fetchAllProblems() {
         try {
             const response = await api().get('/problems')
