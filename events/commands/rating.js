@@ -1,11 +1,28 @@
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js'
 import { ChartJSNodeCanvas } from 'chartjs-node-canvas'
 import userStuff from '../../utils/stuff/user.stuff.js'
+import path from 'path'
 import fs from 'fs'
 
 const width = 800
 const height = 600
 const chartJSNodeCanvas = new ChartJSNodeCanvas({ width, height })
+
+// Tạo đường dẫn cache
+const cacheDir = path.join(process.cwd(), 'cache')
+if (!fs.existsSync(cacheDir)) {
+    fs.mkdirSync(cacheDir) // Tạo thư mục cache nếu chưa tồn tại
+}
+
+/**
+ * Tạo tên tệp cache từ username.
+ * @param {string} username - Tên người dùng hoặc tham số duy nhất
+ * @returns {string} - Đường dẫn tới tệp cache
+ */
+function getCacheFilePath(username) {
+    const sanitizedUsername = username.replace(/[^a-zA-Z0-9_-]/g, '_') // Loại bỏ ký tự đặc biệt
+    return path.join(cacheDir, `${sanitizedUsername}.png`)
+}
 
 async function createRatingChart(contests) {
     const labels = contests.map(contest => contest.key)
@@ -125,17 +142,39 @@ const invoke = async (interaction) => {
         // Defer reply để thông báo rằng bot đang xử lý
         await interaction.deferReply()
 
-        // Fetch rating data từ API
-        const contests = await userStuff.fetchUserRatingInfo(username) // Sử dụng await để giải quyết Promise
+        // Đường dẫn cache
+        const cachePath = getCacheFilePath(username)
 
+        if (fs.existsSync(cachePath)) {
+            console.log(`Cache hit: ${cachePath}`)
+            // Gửi file cache nếu tồn tại
+            const resultEmbed = new EmbedBuilder()
+                .setTitle('Rating Progression')
+                .setDescription(`Biểu đồ rating của **${username}** qua các contest`)
+                .setImage('attachment://rating-chart.png')
+
+            await interaction.editReply({
+                embeds: [resultEmbed],
+                files: [{ attachment: cachePath, name: 'rating-chart.png' }]
+            })
+            return
+        }
+
+        console.log(`Cache miss: Generating new chart for ${username}`)
+
+        // Fetch rating data từ API
+        let contests = await userStuff.fetchUserRatingInfo(username) // Sử dụng await để giải quyết Promise
+
+        contests = contests.filter(
+            contest => contest.rating !== null
+        )
         console.log('contests: ' + JSON.stringify(contests, null, 2))
 
         // Tạo biểu đồ từ dữ liệu
         const chartBuffer = await createRatingChart(contests)
 
-        // Lưu biểu đồ tạm thời
-        const filePath = `./rating-chart-${username}.png`
-        fs.writeFileSync(filePath, chartBuffer)
+        // Lưu biểu đồ vào cache
+        fs.writeFileSync(cachePath, chartBuffer)
 
         // Tạo Embed và gửi biểu đồ
         const resultEmbed = new EmbedBuilder()
@@ -145,11 +184,8 @@ const invoke = async (interaction) => {
 
         await interaction.editReply({
             embeds: [resultEmbed],
-            files: [{ attachment: filePath, name: 'rating-chart.png' }]
+            files: [{ attachment: cachePath, name: 'rating-chart.png' }]
         })
-
-        // Xóa file tạm sau khi gửi
-        fs.unlinkSync(filePath)
     } catch (error) {
         console.error('Error handling /rating command:', error)
 
